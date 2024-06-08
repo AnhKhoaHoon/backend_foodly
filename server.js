@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 const CategoryRoute = require("./routes/category")
 const RestaurantRoute = require("./routes/restaurant")
+const FoodRoute = require("./routes/food")
 
 dotenv.config();
 
