@@ -1,4 +1,4 @@
-const Food = require('../models/food');
+const Food = require('../models/Food');
 
 module.exports = {
     addFood: async (req, res) => {
@@ -31,32 +31,36 @@ module.exports = {
     },
 
     getRandomFood: async (req, res) => {
-        const code = req.params.code;
-
         try {
-            let foods;
-            if (code) {
-                foods = await Food.aggregate([
-                    { $match: { code: code, isAvailable: true } },
-                    { $sample: { size: 5 } },
-                    { $project: { __v: 0 } }
-                ])
+            let randomFoodList = [];
+    
+            // Check if code is provided in the params
+            if (req.params.code) {
+                randomFoodList = await Food.aggregate([
+                    { $match: { code: req.params.code } },
+                    { $sample: { size: 3 } },
+                    { $project: {  __v: 0 } }
+                ]);
             }
-
-            if (foods.length === 0) {
-                foods = await Food.aggregate([
-                    { $match: { isAvailable: true } },
+            
+            // If no code provided in params or no Foods match the provided code
+            if (!randomFoodList.length) {
+                randomFoodList = await Food.aggregate([
                     { $sample: { size: 5 } },
-                    { $project: { __v: 0 } }
-                ])
+                    { $project: {  __v: 0 } }
+                ]);
             }
-
-            res.status(200).json(foods);
+    
+            // Respond with the results
+            if (randomFoodList.length) {
+                res.status(200).json(randomFoodList);
+            } else {
+                res.status(404).json({status: false, message: 'No Foods found' });
+            }
         } catch (error) {
-            res.status(500).json({ status: false, message: error.message });
+            res.status(500).json(error);
         }
     },
-
 
     //Restaurant Menu
     getFoodsByRestaurant: async (req, res) => {
@@ -96,7 +100,7 @@ module.exports = {
         try {
             const results = await Food.aggregate([
                 {
-                    $search:{
+                    $search: {
                         index: "foods",
                         text: {
                             query: search,
@@ -115,30 +119,30 @@ module.exports = {
     },
 
     getRandomFoodsByCategoryAndCode: async (req, res) => {
-        const {category, code} = req.params;
+        const { category, code } = req.params;
 
         try {
             let foods;
 
             foods = await Food.aggregate([
-                {$match: {category: category, code: code, isAvailable: true}},
-                {$sample: {size: 10}},
+                { $match: { category: category, code: code, isAvailable: true } },
+                { $sample: { size: 10 } },
             ])
 
-            if(!foods || foods.length === 0){
+            if (!foods || foods.length === 0) {
                 foods = await Food.aggregate([
-                    {$match: {code: code, isAvailable: true}},
-                    {$sample: {size: 10}},
+                    { $match: { code: code, isAvailable: true } },
+                    { $sample: { size: 10 } },
                 ])
-            }else if(!foods || foods.length === 0){
+            } else if (!foods || foods.length === 0) {
                 foods = await Food.aggregate([
-                    {$match: {isAvailable: true}},
-                    {$sample: {size: 10}},
+                    { $match: { isAvailable: true } },
+                    { $sample: { size: 10 } },
                 ])
             }
             res.status(200).json(foods);
         } catch (error) {
-           res.status(500).json({status: false, message: error.message}) 
+            res.status(500).json({ status: false, message: error.message })
         }
     }
 
